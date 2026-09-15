@@ -15,16 +15,37 @@ Utilizacao:
   sharks next         proximo jogo
   sharks --version    mostra a versao
   sharks --help       mostra esta mensagem
+
+Variaveis de ambiente:
+  EQUIPA   codigo da equipa (por omissao: SJS)
+  EPOCA    epoca a consultar (por omissao: now)
 AJUDA
 }
 
-cmd_next() {
-  local calendario jogo
-  calendario=$(api_calendario)
-  jogo=$(jq -c '[.games[] | select(.gameState == "FUT" or .gameState == "PRE")] | first' <<<"$calendario")
+# Primeiro jogo por disputar de um calendario, ou "null".
+primeiro_jogo_futuro() {
+  jq -c '[.games[] | select(.gameState == "FUT" or .gameState == "PRE")] | first' <<<"$1"
+}
 
-  if [ "$jogo" = "null" ] || [ -z "$jogo" ]; then
-    echo "Nao ha jogos futuros no calendario." >&2
+cmd_next() {
+  local calendario jogo epoca_usada total
+
+  calendario=$(api_calendario)
+  epoca_usada=$(jq -r '.currentSeason' <<<"$calendario")
+  jogo=$(primeiro_jogo_futuro "$calendario")
+
+  # A epoca devolvida por "now" pode ja ter terminado, se a seguinte
+  # ainda nao arrancou. Nesse caso tentamos a epoca seguinte.
+  if [ "$jogo" = "null" ] && [ "$EPOCA" = "now" ]; then
+    epoca_usada=$(epoca_seguinte "$epoca_usada")
+    calendario=$(api_calendario "$epoca_usada")
+    jogo=$(primeiro_jogo_futuro "$calendario")
+  fi
+
+  if [ "$jogo" = "null" ]; then
+    total=$(jq -r '.games | length' <<<"$calendario")
+    echo "Sem jogos por disputar na epoca ${epoca_usada} (${total} jogos no calendario)." >&2
+    echo "Para consultar outra epoca: EPOCA=20262027 sharks next" >&2
     exit 1
   fi
 

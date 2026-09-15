@@ -6,13 +6,19 @@ EQUIPA="${EQUIPA:-SJS}"
 EPOCA="${EPOCA:-now}"
 
 # Faz um pedido GET e devolve o corpo da resposta.
-# --fail faz o curl devolver codigo de erro num 404, em vez de imprimir a pagina de erro.
 api_get() {
   local caminho="$1"
   curl -sS --fail --max-time 10 "${NHL_API}${caminho}"
 }
 
-# Calendario da epoca inteira da equipa.
+# Calendario da epoca inteira. Sem argumento, usa a EPOCA configurada.
 api_calendario() {
-  api_get "/club-schedule-season/${EQUIPA}/${EPOCA}"
+  local epoca="${1:-$EPOCA}"
+  api_get "/club-schedule-season/${EQUIPA}/${epoca}"
+}
+
+# 20252026 -> 20262027
+epoca_seguinte() {
+  local epoca="$1"
+  echo "$(( ${epoca:0:4} + 1 ))$(( ${epoca:4:4} + 1 ))"
 }
