@@ -1,22 +1,38 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-VERSAO="0.0.1"
+RAIZ="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "${RAIZ}/lib/api.sh"
+source "${RAIZ}/lib/format.sh"
+
+VERSAO="0.1.0"
 
 uso() {
   cat <<'AJUDA'
 sharks — consulta dados dos San Jose Sharks (API publica da NHL)
 
 Utilizacao:
+  sharks next         proximo jogo
   sharks --version    mostra a versao
   sharks --help       mostra esta mensagem
-
-Comandos previstos (ver README):
-  sharks next         proximo jogo
 AJUDA
 }
 
+cmd_next() {
+  local calendario jogo
+  calendario=$(api_calendario)
+  jogo=$(jq -c '[.games[] | select(.gameState == "FUT" or .gameState == "PRE")] | first' <<<"$calendario")
+
+  if [ "$jogo" = "null" ] || [ -z "$jogo" ]; then
+    echo "Nao ha jogos futuros no calendario." >&2
+    exit 1
+  fi
+
+  formata_jogo "$jogo"
+}
+
 case "${1:-}" in
+  next)         cmd_next ;;
   ""|-h|--help) uso ;;
   --version)    echo "sharks $VERSAO" ;;
   *)
