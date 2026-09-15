@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+VERSAO="0.0.1"
+
+uso() {
+  cat <<'AJUDA'
+sharks — consulta dados dos San Jose Sharks (API publica da NHL)
+
+Utilizacao:
+  sharks --version    mostra a versao
+  sharks --help       mostra esta mensagem
+
+Comandos previstos (ver README):
+  sharks next         proximo jogo
+AJUDA
+}
+
+case "${1:-}" in
+  ""|-h|--help) uso ;;
+  --version)    echo "sharks $VERSAO" ;;
+  *)
+    echo "comando desconhecido: $1" >&2
+    uso >&2
+    exit 1
+    ;;
+esac

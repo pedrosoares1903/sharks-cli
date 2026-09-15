@@ -1,0 +1,6 @@
+# cache local de respostas da API
+.cache/
+*.tmp
+
+# lixo de sistema
+.DS_Store
