@@ -1,22 +1,74 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-VERSAO="0.0.1"
+RAIZ="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "${RAIZ}/lib/api.sh"
+source "${RAIZ}/lib/jogos.sh"
+source "${RAIZ}/lib/format.sh"
+
+VERSAO="0.2.0"
 
 uso() {
   cat <<'AJUDA'
 sharks — consulta dados dos San Jose Sharks (API publica da NHL)
 
 Utilizacao:
+  sharks next         proximo jogo
+  sharks last         ultimo resultado
   sharks --version    mostra a versao
   sharks --help       mostra esta mensagem
 
-Comandos previstos (ver README):
-  sharks next         proximo jogo
+Variaveis de ambiente:
+  EQUIPA   codigo da equipa (por omissao: SJS)
+  EPOCA    epoca a consultar (por omissao: now)
 AJUDA
 }
 
+erro_sem_jogos() {
+  local epoca="$1" calendario="$2" tipo="$3" total
+  total=$(jq -r '.games | length' <<<"$calendario")
+  echo "Sem jogos ${tipo} na epoca ${epoca} (${total} jogos no calendario)." >&2
+  echo "Para consultar outra epoca: EPOCA=20262027 sharks ..." >&2
+  exit 1
+}
+
+cmd_next() {
+  local calendario jogo epoca
+  calendario=$(api_calendario)
+  epoca=$(jq -r '.currentSeason' <<<"$calendario")
+  jogo=$(jogo_seguinte "$calendario")
+
+  # A epoca em curso pode ja ter terminado: tentamos a seguinte.
+  if [ "$jogo" = "null" ] && [ "$EPOCA" = "now" ]; then
+    epoca=$(epoca_seguinte "$epoca")
+    calendario=$(api_calendario "$epoca")
+    jogo=$(jogo_seguinte "$calendario")
+  fi
+
+  [ "$jogo" = "null" ] && erro_sem_jogos "$epoca" "$calendario" "por disputar"
+  formata_jogo_futuro "$jogo"
+}
+
+cmd_last() {
+  local calendario jogo epoca
+  calendario=$(api_calendario)
+  epoca=$(jq -r '.currentSeason' <<<"$calendario")
+  jogo=$(jogo_anterior "$calendario")
+
+  # A epoca nova pode ainda nao ter jogos disputados: recuamos uma.
+  if [ "$jogo" = "null" ] && [ "$EPOCA" = "now" ]; then
+    epoca=$(jq -r '.previousSeason' <<<"$calendario")
+    calendario=$(api_calendario "$epoca")
+    jogo=$(jogo_anterior "$calendario")
+  fi
+
+  [ "$jogo" = "null" ] && erro_sem_jogos "$epoca" "$calendario" "ja disputados"
+  formata_jogo_terminado "$jogo"
+}
+
 case "${1:-}" in
+  next)         cmd_next ;;
+  last)         cmd_last ;;
   ""|-h|--help) uso ;;
   --version)    echo "sharks $VERSAO" ;;
   *)
