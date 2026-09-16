@@ -22,13 +22,27 @@ cd sharks-cli
 sharks --version mostra a versao
 sharks --help mostra a ajuda
 
+### Exemplo
+
+$ sharks next
+Proximo jogo: Sharks @ Ducks (pre-epoca)
+Dom, 20 set 2026 as 21:00 (hora local) — Honda Center, fora
+
+
+### Variaveis de ambiente
+
+| Variavel | Por omissao | Para que serve |
+|---|---|---|
+| `EQUIPA` | `SJS` | codigo de outra equipa, ex. `BOS` |
+| `EPOCA`  | `now`  | epoca especifica, ex. `20262027` |
+
 
 ## Estado
 
 | Comando | Estado |
 |---|---|
 | `--help` / `--version` | disponivel |
-| `next` — proximo jogo | em desenvolvimento |
+| `next` — proximo jogo | disponivel |
 | `last` — ultimo resultado | previsto |
 | `standings` — classificacao | previsto (a API so devolve dados com a epoca a decorrer) |
 | `roster` — plantel | previsto |
